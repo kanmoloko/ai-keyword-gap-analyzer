@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       seed_keyword:
-        description: 'Từ khóa chính (VD: iphone 17)'
+        description: 'Từ khóa chính (VD: hệ thống thông tin)'
         required: true
-        default: 'iphone 17'
+        default: 'hệ thống thông tin'
       your_url:
-        description: 'URL trang bạn (VD: https://cellphones.com.vn)'
+        description: 'URL trang bạn (VD: https://neu.edu.vn)'
         required: true
-        default: 'https://cellphones.com.vn'
+        default: 'https://neu.edu.vn'
 
 jobs:
   analyze:
