@@ -1,0 +1,73 @@
+name: AI Keyword Gap Analyzer
+
+# Khi nào chạy?
+on:
+  workflow_dispatch:                    # Chạy thủ công (click)
+    inputs:
+      seed_keyword:
+        description: 'Từ khóa chính (VD: iphone 17)'
+        required: true
+        default: 'iphone 17'
+      your_url:
+        description: 'URL trang bạn (VD: https://cellphones.com.vn)'
+        required: true
+        default: 'https://cellphones.com.vn'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest             # Dùng máy ảo Linux miễn phí
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas beautifulsoup4 google-generativeai python-dotenv openpyxl
+
+      - name: Create .env file
+        run: |
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          echo "SERPAPI_KEY=${{ secrets.SERPAPI_KEY }}" >> .env
+
+      - name: Run analyzer.py (with input)
+        env:
+          SEED_KEYWORD: ${{ inputs.seed_keyword }}
+          YOUR_URL: ${{ inputs.your_url }}
+        run: |
+          python -c "
+          import os
+          # Đọc file analyzer.py
+          with open('analyzer.py', 'r', encoding='utf-8') as f:
+              code = f.read()
+          # Thay input() bằng giá trị từ GitHub
+          code = code.replace(
+              'seed = input(\"Nhập từ khóa chính: \").strip()',
+              'seed = \"${{ inputs.seed_keyword }}\"'
+          )
+          code = code.replace(
+              'your_url = input(\"Nhập URL trang bạn: \").strip()',
+              'your_url = \"${{ inputs.your_url }}\"'
+          )
+          exec(code)
+          "
+
+      - name: Upload báo cáo (tải về)
+        uses: actions/upload-artifact@v4
+        with:
+          name: gap-reports
+          path: |
+            GAP_REPORT.xlsx
+            GAP_REPORT.json
+
+      - name: Lưu báo cáo vào repo (tự động commit)
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add GAP_REPORT.xlsx GAP_REPORT.json || echo "Không có file"
+          git commit -m "Auto report: ${{ inputs.seed_keyword }} - ${{ inputs.your_url }}" || echo "Không có gì để commit"
+          git push || echo "Không có thay đổi"
